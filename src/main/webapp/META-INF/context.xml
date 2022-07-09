@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--=============================================================
+Configuration file for Tomcat 9
+Data source and connection pool configuration
+(The default Tomcat's DBCP is used)
+=============================================================-->
+<Context path="/JavaServletLog4j">
+
+  <Resource name="jdbc/beautysalondb"
+  			auth="Container" 
+  			type="javax.sql.DataSource"
+			maxTotal="100" maxIdle="30" maxWaitMillis="10000"
+			username="root" password="vladyslav228"
+			driverClassName="com.mysql.cj.jdbc.Driver"
+			defaultAutoCommit="false"
+			url="jdbc:mysql://localhost:3306/beautysalondb"/>
+			
+</Context>
