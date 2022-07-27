@@ -1,18 +1,16 @@
 package entity;
 
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 @Getter
 @Setter
 @AllArgsConstructor
 @NoArgsConstructor
+@EqualsAndHashCode
 public class Service {
 
-	   private String name;
-	   private int price;
+    private String name;
+    private int price;
 
-	}
+}

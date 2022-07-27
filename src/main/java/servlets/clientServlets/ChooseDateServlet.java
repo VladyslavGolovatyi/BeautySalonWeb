@@ -21,7 +21,7 @@ public class ChooseDateServlet extends HttpServlet {
         request.setAttribute("minDate", LocalDate.now().plusDays(1));
         request.setAttribute("maxDate", LocalDate.now().plusMonths(1));
         LOG.info("Choose date for appointment page");
-        request.getServletContext().getRequestDispatcher("/WEB-INF/views/clientViews/chooseDateView.jsp").
+        request.getServletContext().getRequestDispatcher("/WEB-INF/views/clientViews/chooseNewDateView.jsp").
                 forward(request, response);
     }
 
@@ -30,6 +30,6 @@ public class ChooseDateServlet extends HttpServlet {
         String service = request.getParameter("name");
         String date = request.getParameter("date");
         LOG.info(String.format("Chosen date of appointment, service - %s, date - %s", service, date));
-        response.sendRedirect(request.getContextPath() + "/client/chooseWorker?name=" + service + "&date=" + date);
+        response.sendRedirect("chooseWorker?name=" + service + "&date=" + date);
     }
 }

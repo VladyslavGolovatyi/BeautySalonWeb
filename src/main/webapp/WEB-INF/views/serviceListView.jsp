@@ -8,6 +8,9 @@
     <title>Service List</title>
     <style>
         <%@include file="../../style.css" %>
+        .services {
+            background-color: #b4b2b2;
+        }
     </style>
 </head>
 <body>
@@ -19,16 +22,15 @@
 
 <p style="color: red;">${errorString}</p>
 
-<form method="POST" action="${pageContext.request.contextPath}/serviceList">
-    Filter by worker
+<form method="POST" action="serviceList">
+    <i>Filter by worker</i>
     <br>
     <c:forEach items="${workerList}" var="worker">
-        <input type="radio" name="filter" value="${worker.email}"
+        <input type="radio" name="filter" value="${worker.email}" onclick="this.form.submit()"
                <c:if test="${worker.email.equals(filterForServices)}">checked</c:if>
-        />${worker.first_name} ${worker.last_name}
+        />${worker.firstName} ${worker.lastName}
     </c:forEach>
     <br>
-    <button type="submit">Apply</button>
 </form>
 <form>
     <button type="submit" onclick="${filterForServices = null}">Reset</button>
@@ -54,15 +56,15 @@
             <td>${service.price}</td>
             <c:if test="${loggedInUser.getRole() == 'admin'}">
                 <td>
-                    <button onclick="location.href='editService?name=${service.name}'" type="submit"></button>
+                    <button onclick="location.href='editService?name=${service.name}'" type="submit">Edit</button>
                 </td>
                 <td>
-                    <button onclick="location.href='deleteService?name=${service.name}'" type="submit"></button>
+                    <button onclick="location.href='deleteService?name=${service.name}'" type="submit">Delete</button>
                 </td>
             </c:if>
             <c:if test="${loggedInUser.getRole() == 'client'}">
                 <td>
-                    <button onclick="location.href='chooseDate?name=${service.name}'" type="submit"></button>
+                    <button onclick="location.href='chooseDate?name=${service.name}'" type="submit">Appointment</button>
                 </td>
             </c:if>
         </tr>

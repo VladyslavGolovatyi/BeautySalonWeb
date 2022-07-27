@@ -14,12 +14,13 @@ import java.util.Map;
 @EqualsAndHashCode
 public class User {
 
+   private int id;
    private String email;
    private String password;
    private String role;
-   private String first_name;
-   private String last_name;
-   private String phone_number;
+   private String firstName;
+   private String lastName;
+   private String phoneNumber;
    private int moneyBalance;
    //only for workers
    private int rating;

@@ -1,6 +1,7 @@
 package utils;
 
 import entity.Appointment;
+import entity.Response;
 import entity.Service;
 import entity.User;
 import exception.DBException;
@@ -13,48 +14,59 @@ import javax.naming.NamingException;
 import javax.sql.DataSource;
 import java.sql.*;
 import java.time.LocalDate;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class DBManager {
 
-    private final static String INSERT_INTO_SERVICES = "INSERT INTO Services(name,price) VALUES (?,?)";
+    private final static String INSERT_INTO_SERVICES = "INSERT INTO Services VALUES (?,?)";
     private final static String INSERT_INTO_WORKERS_SERVICES = "INSERT INTO workers_services VALUES ";
     private final static String INSERT_INTO_WORKERS_WORKING_DAYS = "INSERT INTO workers_workingDays VALUES ";
-    private final static String INSERT_INTO_USERS = "INSERT INTO users VALUES(?,?,?,?,?,?,0)";
-    private final static String INSERT_INTO_APPOINTMENTS = "INSERT INTO appointments(worker_email, client_email, is_paid,is_done, timeslot, service) VALUES (?,?,false,false,?,?)";
-    private final static String SELECT_APPOINTMENT = "SELECT worker_email, client_email, is_paid, is_done, service, timeslot FROM appointments WHERE id=?";
-    private final static String SELECT_CLIENT_APPOINTMENTS = "SELECT worker_email, is_paid, is_done, timeslot, service, id FROM appointments a where a.client_email=? order by timeslot";
-    private final static String SELECT_WORKER_APPOINTMENTS = "SELECT client_email, is_paid, is_done, timeslot, service, id FROM appointments a where a.worker_email=? order by timeslot";
-    private final static String SELECT_ALL_APPOINTMENTS = "SELECT * FROM appointments order by timeslot";
-    private final static String SELECT_SERVICE = "SELECT a.Name, a.Price FROM Services a WHERE a.Name=?";
-    private final static String SELECT_ALL_SERVICES = "SELECT a.Name, a.Price FROM Services a ";
-    private final static String SELECT_USER = "SELECT a.password, a.role, first_name, last_name, money_balance, phone_number, rating FROM users a WHERE a.email = ?";
-    private final static String SELECT_ADMIN = "SELECT a.email, a.password, a.role, first_name, last_name, money_balance, phone_number, rating FROM users a WHERE a.role = 'admin'";
-    private final static String SELECT_ALL_WORKERS_ORDERED_BY = "SELECT a.first_name, a.last_name, a.email, a.phone_number, a.password, a.rating FROM users a WHERE a.role = 'worker' ORDER BY ";
-    private final static String SELECT_WORKER_SERVICES = "SELECT a.service FROM workers_services a WHERE worker_email = ?";
-    private final static String SELECT_WORKER_WORKING_DAYS = "SELECT a.working_day FROM workers_workingdays a WHERE worker_email = ?";
-    private final static String UPDATE_SERVICE = "UPDATE services SET price=? WHERE name=? ";
-    private final static String UPDATE_USER_PHONE_NUMBER = "UPDATE users SET phone_number=? WHERE email=?";
-    private final static String UPDATE_CLIENT_BALANCE = "UPDATE users SET money_balance=money_balance+? where email = ?";
+    private final static String INSERT_INTO_USERS = "INSERT INTO users VALUES(null,?,?,?,?,?,?,0,0)";
+    private final static String INSERT_INTO_APPOINTMENTS = "INSERT INTO appointments VALUES (null,?,?,false,false,?,?)";
+    private final static String INSERT_INTO_RESPONSES = "INSERT INTO responses VALUES(null,?,?,?)";
+    private final static String SELECT_LAST_INSERT_ID = "SELECT LAST_INSERT_ID()";
+    private final static String SELECT_APPOINTMENT = "SELECT * FROM appointments WHERE id=?";
+    private final static String SELECT_CLIENT_APPOINTMENTS = "SELECT * FROM appointments WHERE appointments.timeslot>? && client_id=? order by timeslot";
+    private final static String SELECT_WORKER_APPOINTMENTS = "SELECT * FROM appointments WHERE appointments.timeslot>? && worker_id=? order by timeslot";
+    private final static String SELECT_ALL_APPOINTMENTS = "SELECT * FROM appointments WHERE timeslot>? order by timeslot";
+    private final static String SELECT_ALL_PAST_APPOINTMENTS = "SELECT * FROM appointments WHERE timeslot<=? order by timeslot";
+    private final static String SELECT_SERVICE = "SELECT * FROM Services WHERE service_name=?";
+    private final static String SELECT_ALL_SERVICES = "SELECT * FROM Services";
+    private final static String SELECT_USER_BY_ID = "SELECT * FROM users WHERE id = ?";
+    private final static String SELECT_USER_BY_EMAIL_AND_PASSWORD = "SELECT * FROM users WHERE email = ? AND password = ?";
+    private final static String SELECT_USER_BY_EMAIL = "SELECT * FROM users WHERE email = ?";
+    private final static String SELECT_ADMIN = "SELECT * FROM users WHERE role = 'admin'";
+    private final static String SELECT_ALL_WORKERS_ORDERED_BY = "SELECT * FROM users WHERE role = 'worker' ORDER BY ";
+    private final static String SELECT_WORKER_SERVICES = "SELECT service FROM workers_services WHERE worker_id = ?";
+    private final static String SELECT_WORKER_WORKING_DAYS = "SELECT working_day FROM workers_workingdays WHERE worker_id = ?";
+    private final static String SELECT_WORKER_RESPONSES = "SELECT * FROM responses INNER JOIN appointments ON responses.appointment_id=appointments.id WHERE worker_id=?";
+    private final static String SELECT_APPOINTMENT_RESPONSE = "SELECT * FROM responses WHERE appointment_id=?";
+    private final static String UPDATE_SERVICE = "UPDATE services SET price=? WHERE service_name=?";
+    private final static String UPDATE_USER = "UPDATE users SET phone_number=?, email=? WHERE id=?";
+    private final static String UPDATE_USER_RATING = "UPDATE users SET rating = rating+? WHERE id=?";
+    private final static String UPDATE_CLIENT_BALANCE = "UPDATE users SET money_balance=money_balance+? where id = ?";
     private final static String UPDATE_APPOINTMENT_STATUS_PAID = "UPDATE appointments SET is_paid=true where id=?";
     private final static String UPDATE_APPOINTMENT_STATUS_DONE = "UPDATE appointments SET is_done=true where id=?";
     private final static String UPDATE_APPOINTMENT_TIMESLOT = "UPDATE appointments SET timeslot=? where id=?";
-    private final static String DELETE_FROM_WORKERS_SERVICES = "DELETE FROM workers_services WHERE worker_email = ?";
-    private final static String DELETE_FROM_WORKERS_WORKING_DAYS = "DELETE FROM workers_workingdays WHERE worker_email = ?";
-    private final static String DELETE_SERVICE = "DELETE FROM Services WHERE Name= ?";
-    private final static String DELETE_USER = "DELETE FROM users WHERE email= ?";
+    private final static String DELETE_FROM_WORKERS_SERVICES = "DELETE FROM workers_services WHERE worker_id = ?";
+    private final static String DELETE_FROM_WORKERS_WORKING_DAYS = "DELETE FROM workers_workingdays WHERE worker_id = ?";
+    private final static String DELETE_SERVICE = "DELETE FROM Services WHERE service_name= ?";
+    private final static String DELETE_USER = "DELETE FROM users WHERE id= ?";
     private final static String DELETE_APPOINTMENT = "DELETE FROM appointments WHERE id= ?";
-
+    private static final Logger LOG = LogManager.getLogger(DBManager.class);
     private static DBManager instance;
     private final DataSource ds;
-    private static final Logger LOG = LogManager.getLogger(DBManager.class);
 
+    /**
+     * private singleton constructor
+     */
     private DBManager() throws DBException {
         try {
-            Context initContext = new InitialContext();
-            Context envContext = (Context) initContext.lookup("java:/comp/env");
-            ds = (DataSource) envContext.lookup("jdbc/beautysalondb");
+            ds = getDataSource();
             LOG.info("Data source ==> " + ds);
         } catch (NamingException ex) {
             LOG.error("Cannot obtain the data source", ex);
@@ -62,11 +74,28 @@ public class DBManager {
         }
     }
 
+    private DBManager(DataSource ds) {
+        this.ds = ds;
+    }
+
     public static synchronized DBManager getInstance() throws DBException {
         if (instance == null) {
             instance = new DBManager();
         }
         return instance;
+    }
+
+    public static synchronized DBManager getInstance(DataSource ds) throws DBException {
+        if (instance == null) {
+            instance = new DBManager(ds);
+        }
+        return instance;
+    }
+
+    private DataSource getDataSource() throws NamingException {
+        Context initContext = new InitialContext();
+        Context envContext = (Context) initContext.lookup("java:/comp/env");
+        return (DataSource) envContext.lookup("jdbc/beautysalondb");
     }
 
     /**
@@ -138,14 +167,14 @@ public class DBManager {
     }
 
 
-    public void addService(Service service) throws DBException {
+    public void addService(String name, int price) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         try {
             conn = getConnection();
             pstm = conn.prepareStatement(INSERT_INTO_SERVICES);
-            pstm.setString(1, service.getName());
-            pstm.setFloat(2, service.getPrice());
+            pstm.setString(1, name);
+            pstm.setInt(2, price);
             pstm.executeUpdate();
             conn.commit();
         } catch (SQLException ex) {
@@ -173,13 +202,14 @@ public class DBManager {
         }
     }
 
-    public void addWorker(String email, String password, String role, String first_name, String last_name, String phone_number, String[] services, String[] workingDays) throws DBException {
+    public void addWorker(String email, String password, String role, String first_name, String last_name, String phone_number,
+                          List<String> services, List<String> workingDays) throws DBException {
         Connection conn = null;
         try {
             conn = getConnection();
-            addUser(conn, email, password, role, first_name, last_name, phone_number);
-            addWorkerServices(conn, email, services);
-            addWorkerWorkingDays(conn, email, workingDays);
+            int id = addUser(conn, email, password, role, first_name, last_name, phone_number);
+            addWorkerServices(conn, id, services);
+            addWorkerWorkingDays(conn, id, workingDays);
             conn.commit();
         } catch (DBException | SQLException ex) {
             rollback(conn);
@@ -191,11 +221,11 @@ public class DBManager {
 
     }
 
-    private void addWorkerWorkingDays(Connection conn, String email, String[] workingDays) throws DBException {
+    private void addWorkerWorkingDays(Connection conn, int id, List<String> workingDays) throws DBException {
         StringBuilder sql = new StringBuilder(INSERT_INTO_WORKERS_WORKING_DAYS);
-        for (int i = 0; i < workingDays.length; ++i) {
+        for (int i = 0; i < workingDays.size(); ++i) {
             sql.append("(?,?)");
-            if (i != workingDays.length - 1) {
+            if (i != workingDays.size() - 1) {
                 sql.append(",");
             }
         }
@@ -204,10 +234,10 @@ public class DBManager {
             pstm = conn.prepareStatement(sql.toString());
             int i = 1;
             for (String day : workingDays) {
-                pstm.setString(i++, email);
+                pstm.setInt(i++, id);
                 pstm.setString(i++, day);
             }
-            if (workingDays.length != 0) {
+            if (workingDays.size() != 0) {
                 pstm.executeUpdate();
             }
         } catch (SQLException ex) {
@@ -219,11 +249,11 @@ public class DBManager {
 
     }
 
-    private void addWorkerServices(Connection conn, String email, String[] services) throws DBException {
+    private void addWorkerServices(Connection conn, int id, List<String> services) throws DBException {
         StringBuilder sql = new StringBuilder(INSERT_INTO_WORKERS_SERVICES);
-        for (int i = 0; i < services.length; ++i) {
+        for (int i = 0; i < services.size(); ++i) {
             sql.append("(?,?)");
-            if (i != services.length - 1) {
+            if (i != services.size() - 1) {
                 sql.append(",");
             }
         }
@@ -232,10 +262,10 @@ public class DBManager {
             pstm = conn.prepareStatement(sql.toString());
             int i = 1;
             for (String service : services) {
-                pstm.setString(i++, email);
+                pstm.setInt(i++, id);
                 pstm.setString(i++, service);
             }
-            if (services.length != 0) {
+            if (services.size() != 0) {
                 pstm.executeUpdate();
             }
         } catch (SQLException ex) {
@@ -245,11 +275,12 @@ public class DBManager {
             close(pstm);
         }
 
-
     }
 
-    private void addUser(Connection conn, String email, String password, String role, String first_name, String last_name, String phone_number) throws DBException {
+    private int addUser(Connection conn, String email, String password, String role,
+                        String first_name, String last_name, String phone_number) throws DBException {
         PreparedStatement pstm = null;
+        PreparedStatement pstm1 = null;
         try {
             pstm = conn.prepareStatement(INSERT_INTO_USERS);
             pstm.setString(1, email);
@@ -259,23 +290,33 @@ public class DBManager {
             pstm.setString(5, last_name);
             pstm.setString(6, phone_number);
             pstm.executeUpdate();
+
+            pstm1 = conn.prepareStatement(SELECT_LAST_INSERT_ID);
+            try (ResultSet rs = pstm1.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("last_insert_id()");
+                }
+            }
+
         } catch (SQLException ex) {
             LOG.error("Cannot add user", ex);
             throw new DBException("Cannot add user", ex);
         } finally {
+            close(pstm1);
             close(pstm);
         }
+        return 0;
     }
 
-    public void addAppointment(String workerEmail, String clientEmail, String datetime, String service) throws DBException {
+    public void addAppointment(int workerId, int clientId, String datetime, String service) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         try {
             conn = getConnection();
             pstm = conn.prepareStatement(INSERT_INTO_APPOINTMENTS);
 
-            pstm.setString(1, workerEmail);
-            pstm.setString(2, clientEmail);
+            pstm.setInt(1, workerId);
+            pstm.setInt(2, clientId);
             pstm.setString(3, datetime);
             pstm.setString(4, service);
 
@@ -292,6 +333,55 @@ public class DBManager {
 
     }
 
+    public void leaveFeedback(int id, int rating, String response) throws DBException {
+        Connection conn = null;
+        PreparedStatement pstm1 = null;
+        PreparedStatement pstm2 = null;
+
+        try {
+            Appointment appointment = findAppointment(id);
+            conn = getConnection();
+
+            pstm1 = conn.prepareStatement(UPDATE_USER_RATING);
+            pstm1.setInt(1, rating);
+            pstm1.setInt(2, appointment.getWorker().getId());
+            pstm1.executeUpdate();
+
+            pstm2 = conn.prepareStatement(INSERT_INTO_RESPONSES);
+            pstm2.setString(1, response);
+            pstm2.setInt(2, rating);
+            pstm2.setInt(3, appointment.getId());
+            pstm2.executeUpdate();
+
+            conn.commit();
+        } catch (SQLException | DBException ex) {
+            rollback(conn);
+            LOG.error("Cannot leave feedback", ex);
+            throw new DBException("Cannot leave feedback", ex);
+        } finally {
+            close(pstm1);
+            close(pstm2);
+            close(conn);
+        }
+    }
+
+    private boolean hasResponse(Connection conn, int appointmentId) throws DBException {
+        PreparedStatement pstm = null;
+        ResultSet rs = null;
+        try {
+            pstm = conn.prepareStatement(SELECT_APPOINTMENT_RESPONSE);
+            pstm.setInt(1, appointmentId);
+            rs = pstm.executeQuery();
+            return rs.next();
+        } catch (SQLException ex) {
+            LOG.error("Cannot find whether appointment has response", ex);
+            throw new DBException("Cannot find whether appointment has response", ex);
+        } finally {
+            close(rs);
+            close(pstm);
+        }
+    }
+
     public Appointment findAppointment(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -305,13 +395,14 @@ public class DBManager {
             try (ResultSet rs = pstm.executeQuery()) {
                 if (rs.next()) {
                     Appointment appointment = new Appointment();
-                    appointment.setClient(findUser(rs.getString("client_email")));
-                    appointment.setWorker(findUser(rs.getString("worker_email")));
+                    appointment.setClient(findUser(rs.getInt("client_id")));
+                    appointment.setWorker(findUser(rs.getInt("worker_id")));
                     appointment.setId(id);
                     appointment.setTimeslot(rs.getString("timeslot"));
                     appointment.setService(findService(rs.getString("service")));
                     appointment.setStatus(rs.getBoolean("is_paid") ? "Paid" : "Unpaid");
                     appointment.setStatus(appointment.getStatus() + (rs.getBoolean("is_done") ? ",done" : ",not done"));
+                    appointment.setHasResponse(hasResponse(conn, id));
                     return appointment;
                 }
                 return null;
@@ -338,11 +429,11 @@ public class DBManager {
 
             try (ResultSet rs = pstm.executeQuery()) {
                 if (rs.next()) {
-                    String name1 = rs.getString("Name");
+                    String serviceName = rs.getString("service_name");
                     int price = rs.getInt("Price");
-                    return new Service(name1, price);
+                    return new Service(serviceName, price);
                 }
-                return null;
+                return new Service();
             }
 
         } catch (SQLException ex) {
@@ -354,7 +445,7 @@ public class DBManager {
         }
     }
 
-    private User findAdmin() throws DBException{
+    private User findAdmin() throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         ResultSet rs = null;
@@ -366,12 +457,11 @@ public class DBManager {
             rs = pstm.executeQuery();
 
             if (rs.next()) {
-
-                return new User(rs.getString("email"), rs.getString("password"), rs.getString("role"),
-                        rs.getString("first_name"), rs.getString("last_name"), rs.getString("phone_number"),rs.getInt("money_balance"),
+                return new User(rs.getInt("id"), rs.getString("email"), rs.getString("password"), rs.getString("role"),
+                        rs.getString("first_name"), rs.getString("last_name"), rs.getString("phone_number"), rs.getInt("money_balance"),
                         rs.getInt("rating"), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new HashMap<>());
             }
-            return null;
+            return new User();
         } catch (SQLException ex) {
             LOG.error("Cannot find admin", ex);
             throw new DBException("Cannot find admin", ex);
@@ -382,21 +472,32 @@ public class DBManager {
         }
     }
 
-    public User findUser(String email) throws DBException {
+    private User findUser(String sql, int id, String email, String password) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         ResultSet rs = null;
 
         try {
             conn = getConnection();
-            pstm = conn.prepareStatement(SELECT_USER);
-            pstm.setString(1, email);
+            pstm = conn.prepareStatement(sql);
+            switch (sql) {
+                case SELECT_USER_BY_EMAIL:
+                    pstm.setString(1, email);
+                    break;
+                case SELECT_USER_BY_EMAIL_AND_PASSWORD:
+                    pstm.setString(1, email);
+                    pstm.setString(2, password);
+                    break;
+                case SELECT_USER_BY_ID:
+                    pstm.setInt(1, id);
+                    break;
+            }
 
             rs = pstm.executeQuery();
 
             if (rs.next()) {
-                User user = new User(email, rs.getString("password"), rs.getString("role"),
-                        rs.getString("first_name"), rs.getString("last_name"), rs.getString("phone_number"),rs.getInt("money_balance"),
+                User user = new User(rs.getInt("id"), rs.getString("email"), rs.getString("password"), rs.getString("role"),
+                        rs.getString("first_name"), rs.getString("last_name"), rs.getString("phone_number"), rs.getInt("money_balance"),
                         rs.getInt("rating"), new ArrayList<>(), new ArrayList<>(), new ArrayList<>(), new HashMap<>());
 
                 queryWorkerServices(conn, user);
@@ -404,7 +505,7 @@ public class DBManager {
 
                 return user;
             }
-            return null;
+            return new User();
         } catch (SQLException ex) {
             LOG.error("Cannot find user", ex);
             throw new DBException("Cannot find user", ex);
@@ -415,18 +516,29 @@ public class DBManager {
         }
     }
 
-    public void updateUserBalance(String userEmail, int amount) throws DBException {
+    public User findUser(String email) throws DBException {
+        return findUser(SELECT_USER_BY_EMAIL, 0, email, null);
+    }
+
+    public User findUser(String email, String password) throws DBException {
+        return findUser(SELECT_USER_BY_EMAIL_AND_PASSWORD, 0, email, password);
+    }
+
+    public User findUser(int id) throws DBException {
+        return findUser(SELECT_USER_BY_ID, id, null, null);
+    }
+
+    public void updateUserBalance(int userId, int amount) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         try {
             conn = getConnection();
             pstm = conn.prepareStatement(UPDATE_CLIENT_BALANCE);
 
-            pstm.setInt(1,amount);
-            pstm.setString(2,userEmail);
+            pstm.setInt(1, amount);
+            pstm.setInt(2, userId);
             pstm.executeUpdate();
             conn.commit();
-
         } catch (SQLException ex) {
             rollback(conn);
             LOG.error("Cannot update balance", ex);
@@ -437,13 +549,13 @@ public class DBManager {
         }
     }
 
-    private void updateUserBalance(Connection conn, String userEmail, int amount) throws DBException {
+    public void updateUserBalance(Connection conn, int userId, int amount) throws DBException {
         PreparedStatement pstm = null;
         try {
             pstm = conn.prepareStatement(UPDATE_CLIENT_BALANCE);
 
-            pstm.setInt(1,amount);
-            pstm.setString(2,userEmail);
+            pstm.setInt(1, amount);
+            pstm.setInt(2, userId);
             pstm.executeUpdate();
 
         } catch (SQLException ex) {
@@ -454,7 +566,7 @@ public class DBManager {
         }
     }
 
-    public void updateService(Service service) throws DBException {
+    public void updateService(String name, int price) throws DBException {
 
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -463,8 +575,8 @@ public class DBManager {
             conn = getConnection();
             pstm = conn.prepareStatement(UPDATE_SERVICE);
 
-            pstm.setInt(1, service.getPrice());
-            pstm.setString(2, service.getName());
+            pstm.setInt(1, price);
+            pstm.setString(2, name);
             pstm.executeUpdate();
             conn.commit();
         } catch (SQLException ex) {
@@ -474,21 +586,6 @@ public class DBManager {
         } finally {
             close(pstm);
             close(conn);
-        }
-    }
-
-    private void updateUserPhoneNumber(Connection conn, String phoneNumber, String email) throws DBException {
-        PreparedStatement pstm = null;
-        try {
-            pstm = conn.prepareStatement(UPDATE_USER_PHONE_NUMBER);
-            pstm.setString(1, phoneNumber);
-            pstm.setString(2, email);
-            pstm.executeUpdate();
-        } catch (SQLException ex) {
-            LOG.error("Cannot update user phone number", ex);
-            throw new DBException("Cannot update user phone number", ex);
-        } finally {
-            close(pstm);
         }
     }
 
@@ -555,21 +652,28 @@ public class DBManager {
 
     }
 
-    public void updateWorker(String email, String phoneNumber, String[] services, String[] workingDays) throws DBException {
+    public void updateWorker(int id, String email, String phoneNumber, List<String> services, List<String> workingDays) throws DBException {
         Connection conn = null;
+        PreparedStatement pstm = null;
         try {
             conn = getConnection();
-            updateUserPhoneNumber(conn, phoneNumber, email);
-            deleteFromWorkersServices(conn, email);
-            deleteFromWorkersWorkingDays(conn, email);
-            addWorkerServices(conn, email, services);
-            addWorkerWorkingDays(conn, email, workingDays);
+            pstm = conn.prepareStatement(UPDATE_USER);
+            pstm.setString(1, phoneNumber);
+            pstm.setString(2, email);
+            pstm.setInt(3, id);
+            pstm.executeUpdate();
+
+            deleteFromWorkersServices(conn, id);
+            deleteFromWorkersWorkingDays(conn, id);
+            addWorkerServices(conn, id, services);
+            addWorkerWorkingDays(conn, id, workingDays);
             conn.commit();
         } catch (DBException | SQLException ex) {
             rollback(conn);
             LOG.error("Cannot update worker");
-            throw new DBException("Cannot update worker",ex);
+            throw new DBException("Cannot update worker", ex);
         } finally {
+            close(pstm);
             close(conn);
         }
 
@@ -583,14 +687,14 @@ public class DBManager {
         if (appointment.getStatus().startsWith("Paid")) {
             return;
         }
-        if(price > balance) {
+        if (price > balance) {
             LOG.error("There is not enough money on balance");
             throw new DBException("There is not enough money on balance");
         } else {
             try {
                 conn = getConnection();
-                updateUserBalance(conn, appointment.getClient().getEmail(), -price);
-                updateUserBalance(conn, findAdmin().getEmail(), price);
+                updateUserBalance(conn, appointment.getClient().getId(), -price);
+                updateUserBalance(conn, findAdmin().getId(), price);
                 conn.commit();
             } catch (DBException | SQLException ex) {
                 rollback(conn);
@@ -602,11 +706,11 @@ public class DBManager {
         }
     }
 
-    private void deleteFromWorkersServices(Connection conn, String email) throws DBException {
+    private void deleteFromWorkersServices(Connection conn, int id) throws DBException {
         PreparedStatement pstm = null;
         try {
             pstm = conn.prepareStatement(DELETE_FROM_WORKERS_SERVICES);
-            pstm.setString(1, email);
+            pstm.setInt(1, id);
             pstm.executeUpdate();
         } catch (SQLException ex) {
             LOG.error("Cannot delete worker's service", ex);
@@ -616,11 +720,11 @@ public class DBManager {
         }
     }
 
-    private void deleteFromWorkersWorkingDays(Connection conn, String email) throws DBException {
+    private void deleteFromWorkersWorkingDays(Connection conn, int id) throws DBException {
         PreparedStatement pstm = null;
         try {
             pstm = conn.prepareStatement(DELETE_FROM_WORKERS_WORKING_DAYS);
-            pstm.setString(1, email);
+            pstm.setInt(1, id);
             pstm.executeUpdate();
         } catch (SQLException ex) {
             LOG.error("Cannot delete worker's working day", ex);
@@ -650,13 +754,13 @@ public class DBManager {
 
     }
 
-    public void deleteWorker(String email) throws DBException {
+    public void deleteWorker(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         try {
             conn = getConnection();
             pstm = conn.prepareStatement(DELETE_USER);
-            pstm.setString(1, email);
+            pstm.setInt(1, id);
             pstm.executeUpdate();
             conn.commit();
         } catch (SQLException ex) {
@@ -702,7 +806,7 @@ public class DBManager {
             rs = pstm.executeQuery();
             List<Service> list = new ArrayList<>();
             while (rs.next()) {
-                String name = rs.getString("Name");
+                String name = rs.getString("service_name");
                 int price = rs.getInt("Price");
                 Service service = new Service();
                 service.setName(name);
@@ -740,10 +844,11 @@ public class DBManager {
             List<User> list = new ArrayList<>();
             while (rs.next()) {
                 User worker = new User();
-                worker.setFirst_name(rs.getString("first_name"));
-                worker.setLast_name(rs.getString("last_name"));
+                worker.setId(rs.getInt("id"));
+                worker.setFirstName(rs.getString("first_name"));
+                worker.setLastName(rs.getString("last_name"));
                 worker.setEmail(rs.getString("email"));
-                worker.setPhone_number(rs.getString("phone_number"));
+                worker.setPhoneNumber(rs.getString("phone_number"));
                 worker.setPassword(rs.getString("password"));
                 worker.setRating(rs.getInt("rating"));
                 worker.setServices(new ArrayList<>());
@@ -772,11 +877,11 @@ public class DBManager {
         ResultSet rs = null;
         try {
             pstm = conn.prepareStatement(SELECT_WORKER_SERVICES);
-            pstm.setString(1, worker.getEmail());
+            pstm.setInt(1, worker.getId());
             rs = pstm.executeQuery();
             while (rs.next()) {
                 String name = rs.getString("service");
-                worker.getServices().add(new Service(name,findService(name).getPrice()));
+                worker.getServices().add(new Service(name, findService(name).getPrice()));
             }
         } catch (SQLException ex) {
             LOG.error("Cannot get all worker's services", ex);
@@ -792,7 +897,7 @@ public class DBManager {
         ResultSet rs = null;
         try {
             pstm = conn.prepareStatement(SELECT_WORKER_WORKING_DAYS);
-            pstm.setString(1, worker.getEmail());
+            pstm.setInt(1, worker.getId());
             rs = pstm.executeQuery();
             while (rs.next()) {
                 worker.getWorkingDays().add(rs.getString("working_day"));
@@ -806,40 +911,63 @@ public class DBManager {
         }
     }
 
-    public List<String> queryAvailableSlots(String workerEmail, String date) throws DBException {
+    public List<String> queryAvailableSlots(int workerId, String date) throws DBException {
         List<String> allSlots = new ArrayList<>();
-        List<Appointment> workerAppointments = queryWorkerAppointments(workerEmail);
+        List<Appointment> workerAppointments = queryWorkerAppointments(workerId);
         List<String> occupiedSlots = new ArrayList<>();
-        for (Appointment appointment:workerAppointments) {
-            if(appointment.getTimeslot().startsWith(date)) {
+        for (Appointment appointment : workerAppointments) {
+            if (appointment.getTimeslot().startsWith(date)) {
                 occupiedSlots.add(appointment.getTimeslot().split(" ")[1]);
             }
         }
-        for (int i = 10; i < 22; ++i) {
-            if(!occupiedSlots.contains(i + ":00")) {
+        for (int i = 8; i < 20; ++i) {
+            if (i == 13) {
+                continue;
+            }
+            if (!occupiedSlots.contains(i + ":00")) {
                 allSlots.add(i + ":00");
             }
-            if(!occupiedSlots.contains(i + ":30")) {
+            if (!occupiedSlots.contains(i + ":30")) {
                 allSlots.add(i + ":30");
             }
         }
         return allSlots;
     }
 
-    public List<Appointment> queryClientAppointments(String clientEmail) throws DBException {
+    public List<Appointment> queryClientAppointments(int clientId) throws DBException {
+        return queryAppointments(SELECT_CLIENT_APPOINTMENTS, clientId);
+    }
+
+    public List<Appointment> queryWorkerAppointments(int workerId) throws DBException {
+        return queryAppointments(SELECT_WORKER_APPOINTMENTS, workerId);
+    }
+
+    public List<Appointment> queryAllAppointments() throws DBException {
+        return queryAppointments(SELECT_ALL_APPOINTMENTS, 0);
+    }
+
+    public List<Appointment> queryPastAppointments() throws DBException {
+        return queryAppointments(SELECT_ALL_PAST_APPOINTMENTS, 0);
+    }
+
+    private List<Appointment> queryAppointments(String sql, int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         ResultSet rs = null;
         try {
             conn = getConnection();
-            pstm = conn.prepareStatement(SELECT_CLIENT_APPOINTMENTS);
-            pstm.setString(1, clientEmail);
+            pstm = conn.prepareStatement(sql);
+            pstm.setString(1, LocalDate.now().toString());
+            if (sql.equals(SELECT_WORKER_APPOINTMENTS) || sql.equals(SELECT_CLIENT_APPOINTMENTS)) {
+                pstm.setInt(2, id);
+            }
             rs = pstm.executeQuery();
             List<Appointment> list = new ArrayList<>();
             while (rs.next()) {
                 Appointment appointment = new Appointment();
                 appointment.setId(rs.getInt("id"));
-                appointment.setWorker(findUser(rs.getString("worker_email")));
+                appointment.setWorker(findUser(rs.getInt("worker_id")));
+                appointment.setClient(findUser(rs.getInt("client_id")));
                 appointment.setStatus(rs.getBoolean("is_paid") ? "Paid" : "Unpaid");
                 appointment.setStatus(appointment.getStatus() + (rs.getBoolean("is_done") ? ",done" : ",not done"));
                 appointment.setTimeslot(rs.getString("timeslot"));
@@ -848,8 +976,8 @@ public class DBManager {
             }
             return list;
         } catch (SQLException ex) {
-            LOG.error("Cannot get all client's appointments", ex);
-            throw new DBException("Cannot get all client's appointments", ex);
+            LOG.error("Cannot get appointments", ex);
+            throw new DBException("Cannot get appointments", ex);
         } finally {
             close(rs);
             close(pstm);
@@ -858,62 +986,31 @@ public class DBManager {
 
     }
 
-    public List<Appointment> queryWorkerAppointments(String workerEmail) throws DBException {
+    public List<Response> queryWorkerResponses(int workerId) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
         ResultSet rs = null;
         try {
             conn = getConnection();
-            pstm = conn.prepareStatement(SELECT_WORKER_APPOINTMENTS);
-            pstm.setString(1, workerEmail);
+            pstm = conn.prepareStatement(SELECT_WORKER_RESPONSES);
+            pstm.setInt(1, workerId);
             rs = pstm.executeQuery();
-            List<Appointment> list = new ArrayList<>();
+            List<Response> list = new ArrayList<>();
             while (rs.next()) {
-                Appointment appointment = new Appointment();
-                appointment.setId(rs.getInt("id"));
-                appointment.setClient(findUser(rs.getString("client_email")));
-                appointment.setStatus(rs.getBoolean("is_paid") ? "Paid" : "Unpaid");
-                appointment.setStatus(appointment.getStatus() + (rs.getBoolean("is_done") ? ",done" : ",not done"));
-                appointment.setTimeslot(rs.getString("timeslot"));
-                appointment.setService(findService(rs.getString("service")));
-                list.add(appointment);
+                Response response = new Response();
+                response.setId(rs.getInt("appointments.id"));
+                response.setRating(rs.getInt("rating"));
+                response.setWorker(findUser(rs.getInt("worker_id")));
+                response.setClient(findUser(rs.getInt("client_id")));
+                response.setDate(rs.getString("timeslot"));
+                response.setService(findService(rs.getString("service")));
+                response.setMessage(rs.getString("message"));
+                list.add(response);
             }
             return list;
         } catch (SQLException ex) {
             LOG.error("Cannot get all worker's appointments", ex);
             throw new DBException("Cannot get all worker's appointments", ex);
-        } finally {
-            close(rs);
-            close(pstm);
-            close(conn);
-        }
-
-    }
-
-    public List<Appointment> queryAllAppointments() throws DBException {
-        Connection conn = null;
-        PreparedStatement pstm = null;
-        ResultSet rs = null;
-        try {
-            conn = getConnection();
-            pstm = conn.prepareStatement(SELECT_ALL_APPOINTMENTS);
-            rs = pstm.executeQuery();
-            List<Appointment> list = new ArrayList<>();
-            while (rs.next()) {
-                Appointment appointment = new Appointment();
-                appointment.setId(rs.getInt("id"));
-                appointment.setWorker(findUser(rs.getString("worker_email")));
-                appointment.setClient(findUser(rs.getString("client_email")));
-                appointment.setStatus(rs.getBoolean("is_paid") ? "Paid" : "Unpaid");
-                appointment.setStatus(appointment.getStatus() + (rs.getBoolean("is_done") ? ",done" : ",not done"));
-                appointment.setTimeslot(rs.getString("timeslot"));
-                appointment.setService(findService(rs.getString("service")));
-                list.add(appointment);
-            }
-            return list;
-        } catch (SQLException ex) {
-            LOG.error("Cannot get all appointments", ex);
-            throw new DBException("Cannot get all appointments", ex);
         } finally {
             close(rs);
             close(pstm);

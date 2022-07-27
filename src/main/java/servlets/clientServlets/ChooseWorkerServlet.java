@@ -12,7 +12,6 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -53,8 +52,8 @@ public class ChooseWorkerServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         String service = request.getParameter("name");
         String date = request.getParameter("date");
-        String email = request.getParameter("workers");
-        LOG.info(String.format("Chosen worker for appointment, service - %s, date - %s, worker email - %s", service, date, email));
-        response.sendRedirect(request.getContextPath() + "/client/chooseTime?name=" + service + "&date=" + date + "&workerEmail=" + email);
+        String id = request.getParameter("workers");
+        LOG.info(String.format("Chosen worker for appointment, service - %s, date - %s, worker id - %s", service, date, id));
+        response.sendRedirect("chooseTime?name=" + service + "&date=" + date + "&workerId=" + id);
     }
 }

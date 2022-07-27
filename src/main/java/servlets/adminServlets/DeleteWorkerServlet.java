@@ -24,12 +24,12 @@ public class DeleteWorkerServlet extends HttpServlet {
     @Override
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
-        String email = request.getParameter("email");
-        LOG.info("Deleting worker with email "+email);
+        int id = Integer.parseInt(request.getParameter("id"));
+        LOG.info("Deleting worker with id "+id);
         String errorString = null;
 
         try {
-            DBManager.getInstance().deleteWorker(email);
+            DBManager.getInstance().deleteWorker(id);
         } catch (DBException e) {
             e.printStackTrace();
             errorString = e.getMessage();
@@ -41,7 +41,7 @@ public class DeleteWorkerServlet extends HttpServlet {
                     forward(request, response);
         }
         else {
-            LOG.info(String.format("Worker with email %s successfully deleted",email));
+            LOG.info(String.format("Worker №%s successfully deleted",id));
             response.sendRedirect(request.getContextPath() + "/admin/workerList");
         }
 

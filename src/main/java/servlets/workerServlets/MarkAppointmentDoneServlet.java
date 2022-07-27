@@ -35,13 +35,7 @@ public class MarkAppointmentDoneServlet extends HttpServlet {
             LOG.info(String.format("Appointment %d status marked done",id));
         }
         request.setAttribute("errorString", errorString);
-        response.sendRedirect(request.getContextPath() + "/worker/appointments");
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
+        response.sendRedirect("schedule");
     }
 
 }

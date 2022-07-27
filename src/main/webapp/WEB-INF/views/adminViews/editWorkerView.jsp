@@ -15,52 +15,62 @@
 <jsp:include page="../_header.jsp"/>
 <jsp:include page="../_menu.jsp"/>
 
-<h3>Edit Worker</h3>
-
 <p style="color: red;">${errorString}</p>
+<%session.removeAttribute("errorString");%>
 
 <c:if test="${not empty worker}">
     <form method="POST" action="${pageContext.request.contextPath}/admin/editWorker">
-        <input type="hidden" name="email" value="${worker.email}"/>
-            ${worker.first_name} ${worker.last_name}
-        <br>
-        ${worker.email}
+        <input type="hidden" name="id" value="${worker.id}"/>
         <table>
+            <thead>
             <tr>
-                <td>Phone number</td>
-                <td><input type="text" name="phone_number" value="${worker.phone_number}"/></td>
+                <th colspan="2">Edit Worker</th>
             </tr>
-            <tr>
-                <td></td>
-                <td>Services</td>
-            </tr>
-            <c:forEach items="${serviceList}" var="service">
+            </thead>
+            <tbody>
                 <tr>
-                    <td>${service.name}</td>
-                    <td><input type="checkbox" name="service" value="${service.name}"
-                               <c:if test="${workerServices.contains(service.name)}">checked</c:if>/> </td>
+                    <td>Full name</td>
+                    <td>${worker.firstName} ${worker.lastName}</td>
                 </tr>
-            </c:forEach>
-            <tr>
-                <td></td>
-                <td>Working days</td>
-            </tr>
-            <c:forEach items="${days}" var="day">
                 <tr>
-                    <td>${day}</td>
-                    <td><input type="checkbox" name="workingDay" value=${day}
-                            <c:if test="${workingDays.contains(day)}">checked</c:if>
-                    /></td>
+                    <td>Email</td>
+                    <td><input type="text" name="email" value="${worker.email}"/></td>
                 </tr>
-            </c:forEach>
-            <tr>
-                <td>
-                    <button type="submit">Submit</button>
-                </td>
-                <td>
-                    <button type="button" onclick="location.href='${pageContext.request.contextPath}/workerList'">Cancel</button>
-                </td>
-            </tr>
+                <tr>
+                    <td>Phone number</td>
+                    <td><input type="tel" name="phoneNumber" value="${worker.phoneNumber}" pattern="\+[0-9]{9,15}"
+                               placeholder="+3801234567"/></td>
+                </tr>
+                <tr>
+                    <td colspan="2">Services</td>
+                </tr>
+                <c:forEach items="${serviceList}" var="service">
+                    <tr>
+                        <td>${service.name}</td>
+                        <td><input type="checkbox" name="service" value="${service.name}"
+                                   <c:if test="${workerServices.contains(service)}">checked</c:if>/></td>
+                    </tr>
+                </c:forEach>
+                <tr>
+                    <td colspan="2">Working days</td>
+                </tr>
+                <c:forEach items="${days}" var="day">
+                    <tr>
+                        <td>${day}</td>
+                        <td><input type="checkbox" name="workingDay" value=${day}
+                                <c:if test="${workingDays.contains(day)}">checked</c:if>
+                        /></td>
+                    </tr>
+                </c:forEach>
+                <tr>
+                    <td colspan="2">
+                        <button type="submit">Submit</button>
+                        <button type="button" onclick="location.href='${pageContext.request.contextPath}/workerList'">
+                            Cancel
+                        </button>
+                    </td>
+                </tr>
+            </tbody>
         </table>
     </form>
 </c:if>

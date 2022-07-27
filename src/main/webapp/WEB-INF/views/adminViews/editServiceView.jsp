@@ -13,25 +13,29 @@
       <jsp:include page="../_header.jsp"/>
       <jsp:include page="../_menu.jsp"/>
 
-      <h3>Edit Service</h3>
-
       <p style="color: red;">${errorString}</p>
+      <%session.removeAttribute("errorString");%>
 
       <c:if test="${not empty service}">
-         <form method="POST" action="${pageContext.request.contextPath}/admin/editService">
+         <form method="POST" action="editService">
             <input type="hidden" name="name" value="${service.name}" />
             <table>
+               <thead>
                <tr>
-                  <td>${service.name}</td>
+                  <th colspan="2">Edit Service</th>
+               </tr>
+               </thead>
+               <tr>
+                  <td colspan="2">${service.name}</td>
                </tr>
                <tr>
                   <td>Price</td>
                   <td><input type="text" name="price" value="${service.price}" /></td>
                </tr>
                <tr>
-                  <td>
+                  <td colspan ="2">
                      <button type="submit">Submit</button>
-                     <button type="button" onclick="location.href='${pageContext.request.contextPath}/admin/serviceList'">Cancel</button>
+                     <button type="button" onclick="location.href='serviceList'">Cancel</button>
                   </td>
                </tr>
             </table>

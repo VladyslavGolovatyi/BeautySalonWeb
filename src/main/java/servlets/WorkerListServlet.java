@@ -6,7 +6,6 @@ import exception.DBException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import utils.DBManager;
-import utils.MyUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -70,8 +69,7 @@ public class WorkerListServlet extends HttpServlet {
         } else {
             request.getSession().setAttribute("filterListForWorkers", Arrays.asList(request.getParameterValues("filter")));
         }
-        boolean isGuest = MyUtils.getLoggedInUser(request.getSession()) == null;
-        response.sendRedirect(request.getContextPath() + (!isGuest ? "/" + MyUtils.getLoggedInUser(request.getSession()).getRole() : "") + "/workerList");
+        response.sendRedirect("workerList");
     }
 
 }

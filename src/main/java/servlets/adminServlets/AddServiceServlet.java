@@ -18,7 +18,6 @@ import java.io.IOException;
  */
 @WebServlet(urlPatterns = {"/admin/addService"})
 public class AddServiceServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
     private static final Logger LOG = LogManager.getLogger(AddServiceServlet.class);
 
     @Override
@@ -29,15 +28,14 @@ public class AddServiceServlet extends HttpServlet {
                 forward(request, response);
     }
 
-    // Коли адмін вводить інформацію про послугу, і натискає Submit цей метод буде викликаний.
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
         LOG.info("Adding new service");
         String errorString = null;
-        String name = request.getParameter("name");
-        String priceStr = request.getParameter("price");
+        String name = request.getParameter("name").trim();
+        String priceStr = request.getParameter("price").trim();
         int price = 0;
         try {
             price = Integer.parseInt(priceStr);
@@ -51,25 +49,22 @@ public class AddServiceServlet extends HttpServlet {
             errorString = "Service name invalid!";
         }
 
-        Service service = new Service(name, price);
-
         if (errorString == null) {
             try {
-                DBManager.getInstance().addService(service);
+                DBManager.getInstance().addService(name, price);
             } catch (DBException e) {
                 e.printStackTrace();
                 errorString = e.getMessage();
             }
         }
 
-        request.setAttribute("errorString", errorString);
+        request.getSession().setAttribute("errorString", errorString);
 
         if (errorString != null) {
-            request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/addServiceView.jsp").
-                    forward(request, response);
+            response.sendRedirect("addService");
         } else {
             LOG.info(String.format("New service %s successfully added",name));
-            response.sendRedirect(request.getContextPath() + "/admin/serviceList");
+            response.sendRedirect("serviceList");
         }
     }
 

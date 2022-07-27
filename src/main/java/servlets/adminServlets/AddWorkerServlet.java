@@ -1,11 +1,11 @@
 package servlets.adminServlets;
 
 import entity.Service;
+import entity.User;
 import exception.DBException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import utils.DBManager;
-import utils.MyUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -13,18 +13,16 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.sql.Connection;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
- * Servlet for adding new service(only for admin)
+ * Servlet for adding new worker(only for admin)
  */
 @WebServlet(urlPatterns = {"/admin/addWorker"})
 public class AddWorkerServlet extends HttpServlet {
-    private static final long serialVersionUID = 1L;
     private static final Logger LOG = LogManager.getLogger(AddWorkerServlet.class);
 
     @Override
@@ -55,22 +53,18 @@ public class AddWorkerServlet extends HttpServlet {
             throws ServletException, IOException {
 
         LOG.info("Adding new worker");
-        String first_name = request.getParameter("first_name");
-        String last_name = request.getParameter("last_name");
+        String first_name = request.getParameter("firstName");
+        String last_name = request.getParameter("lastName");
         String email = request.getParameter("email");
         String password = request.getParameter("password");
-        String phone_number = request.getParameter("phone_number");
+        String phone_number = request.getParameter("phoneNumber");
 
 
         String errorString = null;
-        List<Service> list = null;
-        List<String> workerServices = null;
+        List<String> workerServices = new ArrayList<>();
         List<String> workingDays = null;
-        List<String> days = Arrays.asList("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday");
-
         try {
             workerServices = new ArrayList<>(Arrays.asList(request.getParameterValues("service")));
-
         } catch (NullPointerException e) {
             LOG.error("Worker must have at least one service");
             errorString = "Worker must have at least one service";
@@ -81,13 +75,6 @@ public class AddWorkerServlet extends HttpServlet {
         } catch (NullPointerException e) {
             LOG.error("Worker must have at least one working day");
             errorString = "Worker must have at least one working day";
-        }
-
-        try {
-            list = DBManager.getInstance().queryService();
-        } catch (DBException e) {
-            e.printStackTrace();
-            errorString = e.getMessage();
         }
 
         if (password.length() == 0) {
@@ -105,10 +92,13 @@ public class AddWorkerServlet extends HttpServlet {
             errorString = "Name is invalid!";
         }
 
+        User worker = new User(0, email, password, "worker", first_name, last_name, phone_number,0,0,
+                null, workingDays,null,null);
+
         if (errorString == null) {
             try {
                 DBManager.getInstance().addWorker(email, password, "worker", first_name, last_name, phone_number,
-                        workerServices.toArray(new String[0]), workingDays.toArray(new String[0]));
+                        workerServices, workingDays);
             } catch (DBException e) {
                 e.printStackTrace();
                 errorString = e.getMessage();
@@ -116,14 +106,13 @@ public class AddWorkerServlet extends HttpServlet {
         }
 
         if (errorString != null) {
-            request.setAttribute("errorString", errorString);
-            request.setAttribute("serviceList", list);
-            request.setAttribute("days", days);
-            request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/addWorkerView.jsp").
-                    forward(request, response);
+            request.getSession().setAttribute("errorString", errorString);
+            request.getSession().setAttribute("worker", worker);
+            request.getSession().setAttribute("workerServices", workerServices);
+            response.sendRedirect("addWorker");
         } else {
-            LOG.info(String.format("New worker %s successfully added",first_name+" "+last_name));
-            response.sendRedirect(request.getContextPath() + "/admin/workerList");
+            LOG.info(String.format("New worker %s successfully added", first_name + " " + last_name));
+            response.sendRedirect("workerList");
         }
     }
 

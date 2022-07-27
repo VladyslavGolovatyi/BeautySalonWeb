@@ -18,6 +18,7 @@
 <h3>Make an appointment</h3>
 
 <p style="color: red;">${errorString}</p>
+<%session.removeAttribute("errorString");%>
 
 <c:if test="${not empty name}">
     <form method="POST" action="${pageContext.request.contextPath}/client/chooseDate">
@@ -26,7 +27,7 @@
         Choose date:
         <input type="date" name="date" value="date" max = "${maxDate}" min = "${minDate}" required/><br><br>
         <button type="submit">Next</button>
-        <button type="button" onclick="location.href='${pageContext.request.contextPath}/serviceList'">Cancel</button>
+        <button type="button" onclick="location.href='serviceList'">Cancel</button>
     </form>
 </c:if>
 

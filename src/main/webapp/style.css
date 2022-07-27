@@ -16,6 +16,59 @@ button:hover {
     color: white;
 }
 
+.btn-flip {
+    opacity: 1;
+    outline: 0;
+    color: #fff;
+    line-height: 30px;
+    position: relative;
+    text-align: center;
+    letter-spacing: 1px;
+    display: block;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-flip:hover:after {
+    opacity: 1;
+    transform: translateY(0) rotateX(0);
+}
+
+.btn-flip:hover:before {
+    opacity: 0;
+    transform: translateY(50%) rotateX(90deg);
+}
+
+.btn-flip:after {
+    top: 0;
+    left: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    color: black;
+    display: block;
+    transition: 0.5s;
+    position: absolute;
+    background: #adadaf;
+    content: attr(data-back);
+    transform: translateY(-50%) rotateX(90deg);
+}
+
+.btn-flip:before {
+    top: 0;
+    left: 0;
+    opacity: 1;
+    color: black;
+    display: block;
+    padding: 0 30px;
+    line-height: 30px;
+    transition: 0.5s;
+    position: static;
+    background: #FFE4E4;
+    content: attr(data-front);
+    transform: translateY(0) rotateX(0);
+}
+
 table {
     border-collapse: collapse;
     margin: 25px 0;
@@ -31,12 +84,17 @@ table thead tr {
     text-align: center;
 }
 
-table th,
+table th {
+    padding: 12px 15px;
+}
+
 table td {
+    text-align: center;
     padding: 12px 15px;
 }
 
 table tbody tr {
+    background-color: #E0E0E0;
     border-bottom: 1px solid #dddddd;
 }
 
@@ -76,4 +134,30 @@ table tbody tr:last-of-type {
     color: white;
 }
 
+.red {
+    background-color: #FFE4E4;
+}
+
+.green {
+    background-color: #A6F5CB;
+}
+
+.pagination {
+    display: inline-block;
+}
+
+.pagination a {
+    color: black;
+    float: left;
+    padding: 8px 16px;
+    text-decoration: none;
+}
+
+.a:hover:not(.active) {
+    background-color: #ddd;
+}
+
+form {
+    display: inline;
+}
 

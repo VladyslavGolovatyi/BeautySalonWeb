@@ -43,10 +43,9 @@ public class LoginServlet extends HttpServlet {
 			errorString = "Required email and password!";
 		} else {
 			try {
-				user = DBManager.getInstance().findUser(email);
-				if (user == null || !user.getPassword().equals(password)) {
-					LOG.error("Email or password invalid");
-					errorString = "Email or password invalid";
+				user = DBManager.getInstance().findUser(email, password);
+				if(user == null) {
+					errorString = "Wrong email or password";
 				}
 			} catch (DBException e) {
 				e.printStackTrace();
@@ -54,9 +53,8 @@ public class LoginServlet extends HttpServlet {
 			}
 		}
 		if (errorString != null) {
-			request.setAttribute("errorString", errorString);
-			this.getServletContext().getRequestDispatcher("/WEB-INF/views/guestViews/loginView.jsp").
-					forward(request, response);
+			request.getSession().setAttribute("errorString", errorString);
+			response.sendRedirect("login");
 		}
 		else {
 			HttpSession session = request.getSession();

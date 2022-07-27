@@ -26,15 +26,15 @@ public class AppointmentsServlet extends HttpServlet {
             throws ServletException, IOException {
         List<Appointment> appointments = null;
         HttpSession httpSession = request.getSession();
-        String userEmail = MyUtils.getLoggedInUser(httpSession).getEmail();
+        int userId = MyUtils.getLoggedInUser(httpSession).getId();
         String role = MyUtils.getLoggedInUser(httpSession).getRole();
         String errorString = null;
 
         try {
             if(role.equals("client"))
-                appointments = DBManager.getInstance().queryClientAppointments(userEmail);
+                appointments = DBManager.getInstance().queryClientAppointments(userId);
             if(role.equals("worker"))
-                appointments = DBManager.getInstance().queryWorkerAppointments(userEmail);
+                appointments = DBManager.getInstance().queryWorkerAppointments(userId);
             if(role.equals("admin"))
                 appointments = DBManager.getInstance().queryAllAppointments();
         } catch (DBException e) {
@@ -49,12 +49,6 @@ public class AppointmentsServlet extends HttpServlet {
         this.getServletContext().getRequestDispatcher("/WEB-INF/views/appointmentsView.jsp").
                 forward(request, response);
 
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
-            throws ServletException, IOException {
-        doGet(request, response);
     }
 
 }

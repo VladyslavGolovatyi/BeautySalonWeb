@@ -6,7 +6,6 @@ import exception.DBException;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 import utils.DBManager;
-import utils.MyUtils;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -59,8 +58,7 @@ public class ServiceListServlet extends HttpServlet {
     protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
         request.getSession().setAttribute("filterForServices", request.getParameter("filter"));
-        boolean isGuest = MyUtils.getLoggedInUser(request.getSession()) == null;
-        response.sendRedirect(request.getContextPath() + (!isGuest ? "/" + MyUtils.getLoggedInUser(request.getSession()).getRole() : "") + "/serviceList");
+        response.sendRedirect("serviceList");
     }
 
 }

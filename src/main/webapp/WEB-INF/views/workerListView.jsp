@@ -8,24 +8,27 @@
     <title>Worker List</title>
     <style>
         <%@include file="../../style.css" %>
+        .workers {
+            background-color: #b4b2b2;
+        }
     </style>
 </head>
-
+<body>
 <jsp:include page="_header.jsp"/>
 <jsp:include page="_menu.jsp"/>
 
 <h3>Worker List</h3>
 
 <p style="color: red;">${errorString}</p>
+<%session.removeAttribute("errorString");%>
 
-<form method="POST" action="${pageContext.request.contextPath}/workerList">
-    Sorted by
-    <input type="radio" name="sorting" value="first_name" checked/>First name
-    <input type="radio" name="sorting" value="rating" <c:if test="${isSortedByRating}">checked</c:if>>Rating
+<form method="POST" action="workerList">
+    <i>Sorted by</i>
+    <input type="radio" name="sorting" value="first_name" onchange="this.form.submit()" checked/>First name
+    <input type="radio" name="sorting" value="rating" onchange="this.form.submit()" <c:if test="${isSortedByRating}">checked</c:if>>Rating
     <br>
     <br>
-    Filter by services
-    <br>
+    <i>Filter by services</i>
     <c:forEach items="${serviceList}" var="service">
         <input type="checkbox" name="filter" value="${service.name}"
                <c:if test = "${filterListForWorkers.contains(service.name)}">checked</c:if>
@@ -35,7 +38,7 @@
     <button type="submit">Apply</button>
 </form>
 <form>
-    <button type="submit" onclick="${filterListForWorkers = null}">Reset</button>
+    <button type="submit" onclick="${filterListForWorkers = null; isSortedByRating = false}">Reset</button>
 </form>
 
 <table>
@@ -51,6 +54,7 @@
         <th>Services</th>
         <th>Rating</th>
         <th>Working days</th>
+        <th>Responses</th>
         <c:if test="${loggedInUser.getRole() == 'admin'}">
             <th>Edit</th>
             <th>Delete</th>
@@ -60,11 +64,11 @@
     <tbody>
     <c:forEach items="${workerList}" var="worker">
         <tr>
-            <td>${worker.first_name}</td>
-            <td>${worker.last_name}</td>
+            <td>${worker.firstName}</td>
+            <td>${worker.lastName}</td>
             <c:if test="${loggedInUser.getRole() == 'admin'}">
                 <td>${worker.email}</td>
-                <td>${worker.phone_number}</td>
+                <td>${worker.phoneNumber}</td>
                 <td>${worker.password}</td>
             </c:if>
             <td>
@@ -82,12 +86,15 @@
                     </c:forEach>
                 </ul>
             </td>
+            <td>
+                <button onclick="location.href='responses?id=${worker.id}'" type="submit">Responses</button>
+            </td>
             <c:if test="${loggedInUser.getRole() == 'admin'}">
                 <td>
-                    <button onclick="location.href='editWorker?email=${worker.email}'" type="submit">Edit</button>
+                    <button onclick="location.href='editWorker?id=${worker.id}'" type="submit">Edit</button>
                 </td>
                 <td>
-                    <button onclick="location.href='deleteWorker?email=${worker.email}'" type="submit">Delete</button>
+                    <button onclick="location.href='deleteWorker?id=${worker.id}'" type="submit">Delete</button>
                 </td>
             </c:if>
         </tr>

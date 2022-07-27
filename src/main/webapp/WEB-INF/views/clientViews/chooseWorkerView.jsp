@@ -28,11 +28,11 @@
         Choose specialist:
         <select name="workers" id ="workers">
             <c:forEach items="${workerList}" var="worker">
-                <option name="${worker.email}" value="${worker.email}">${worker.first_name} ${worker.last_name}</option>
+                <option name="${worker.id}" value="${worker.id}">${worker.firstName} ${worker.lastName}</option>
             </c:forEach>
         </select><br><br>
         <button type="submit">Next</button>
-        <button type="button" onclick="location.href='${pageContext.request.contextPath}/serviceList'">Cancel</button>
+        <button type="button" onclick="location.href='serviceList'">Cancel</button>
     </form>
 </c:if>
 

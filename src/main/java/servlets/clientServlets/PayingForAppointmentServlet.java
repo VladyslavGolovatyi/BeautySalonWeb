@@ -23,6 +23,19 @@ public class PayingForAppointmentServlet extends HttpServlet {
             throws ServletException, IOException {
         String errorString = null;
         int id = Integer.parseInt(request.getParameter("id"));
+        try {
+            if(!DBManager.getInstance().findAppointment(id).getClient().getEmail().
+                    equals(MyUtils.getLoggedInUser(request.getSession()).getEmail())) {
+                errorString = "You do not have permission to access the requested resource";
+                request.setAttribute("errorString", errorString);
+                request.getRequestDispatcher("/WEB-INF/views/homeView.jsp")
+                        .forward(request, response);
+                return;
+            }
+        } catch (DBException e) {
+            e.printStackTrace();
+            errorString = e.getMessage();
+        }
         LOG.info(String.format("Paying for the appointment %d",id));
         try {
             DBManager.getInstance().payForAppointment(id);
@@ -35,12 +48,12 @@ public class PayingForAppointmentServlet extends HttpServlet {
         if(errorString == null) {
             LOG.info(String.format("Appointment %d successfully paid",id));
             try {
-                MyUtils.storeLoggedInUser(request.getSession(), DBManager.getInstance().findUser(MyUtils.getLoggedInUser(request.getSession()).getEmail()));
+                MyUtils.storeLoggedInUser(request.getSession(), DBManager.getInstance().findUser(MyUtils.getLoggedInUser(request.getSession()).getId()));
             } catch (DBException e) {
                 e.printStackTrace();
                 LOG.error("Failed to refresh currently logged in user");
             }
-            response.sendRedirect(request.getContextPath() + "/client/appointments");
+            response.sendRedirect("appointments");
         } else {
             request.setAttribute("errorString", errorString);
             request.getServletContext().getRequestDispatcher("/WEB-INF/views/homeView.jsp").

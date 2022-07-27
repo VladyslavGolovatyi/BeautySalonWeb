@@ -66,7 +66,7 @@ public class EditServiceServlet extends HttpServlet {
 
         if (errorString == null) {
             try {
-                DBManager.getInstance().updateService(service);
+                DBManager.getInstance().updateService(name,price);
             } catch (DBException e) {
                 e.printStackTrace();
                 errorString = e.getMessage();
@@ -82,13 +82,12 @@ public class EditServiceServlet extends HttpServlet {
             }
         }
         request.setAttribute("service", service);
-        request.setAttribute("errorString", errorString);
         if (errorString != null) {
-            request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/editServiceView.jsp").
-                    forward(request, response);
+            request.getSession().setAttribute("errorString", errorString);
+            response.sendRedirect("editService?name="+name);
         } else {
             LOG.info(String.format("Service %s successfully edited, new price - %d", name, price));
-            response.sendRedirect(request.getContextPath() + "/admin/serviceList");
+            response.sendRedirect("serviceList");
         }
     }
 

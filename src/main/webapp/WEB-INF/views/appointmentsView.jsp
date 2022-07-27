@@ -8,6 +8,9 @@
     <title>User appointments</title>
     <style>
         <%@include file="../../style.css" %>
+        .appointments {
+            background-color: #b4b2b2;
+        }
     </style>
 </head>
 <body>
@@ -17,6 +20,8 @@
 
 <h3>Appointments:</h3>
 
+<p style="color: red;">${errorString}</p>
+<%session.removeAttribute("errorString");%>
 <table>
     <thead>
     <tr>
@@ -27,6 +32,7 @@
             <th>Worker</th>
             <th>To pay</th>
             <th>Cancel</th>
+            <th>Leave response</th>
         </c:if>
         <c:if test="${loggedInUser.role=='admin'}">
             <th>Worker</th>
@@ -49,38 +55,33 @@
             <td>${appointment.timeslot}</td>
             <td>${appointment.status}</td>
             <c:if test="${loggedInUser.role=='client'}">
-                <td>${appointment.worker.first_name} ${appointment.worker.last_name}</td>
+                <td>${appointment.worker.firstName} ${appointment.worker.lastName}</td>
                 <td>
-                    <button onclick="location.href='payForAppointment?id=${appointment.id}'" type="submit"></button>
+                    <button onclick="location.href='payForAppointment?id=${appointment.id}'" type="submit">Pay</button>
                 </td>
                 <td>
-                    <button onclick="location.href='deleteAppointment?id=${appointment.id}'" type="submit"></button>
+                    <button onclick="location.href='deleteAppointment?id=${appointment.id}'" type="submit">Cancel</button>
+                </td>
+                <td>
+                    <button onclick="location.href='leaveFeedback?id=${appointment.id}'" type="submit">Response</button>
                 </td>
             </c:if>
             <c:if test="${loggedInUser.role=='admin'}">
-                <td>${appointment.worker.first_name} ${appointment.worker.last_name}</td>
-                <td>${appointment.client.first_name} ${appointment.client.last_name}</td>
+                <td>${appointment.worker.firstName} ${appointment.worker.lastName}</td>
+                <td>${appointment.client.firstName} ${appointment.client.lastName}</td>
                 <td>${appointment.client.email}</td>
-                <td>${appointment.client.phone_number}</td>
+                <td>${appointment.client.phoneNumber}</td>
                 <td>
-                    <button onclick="location.href='chooseDate?id=${appointment.id}'" type="submit"></button>
+                    <button onclick="location.href='chooseDate?id=${appointment.id}'" type="submit">Edit</button>
                 </td>
                 <td>
-                    <button onclick="location.href='deleteAppointment?id=${appointment.id}'" type="submit"></button>
-                </td>
-            </c:if>
-            <c:if test="${loggedInUser.role=='worker'}">
-                <td>${appointment.client.first_name} ${appointment.client.last_name}</td>
-                <td>
-                    <button onclick="location.href='markAppointmentDone?id=${appointment.id}'" type="submit"></button>
+                    <button onclick="location.href='deleteAppointment?id=${appointment.id}'" type="submit">Cancel</button>
                 </td>
             </c:if>
         </tr>
     </c:forEach>
     </tbody>
 </table>
-
-<jsp:include page="_footer.jsp"/>
 
 </body>
 </html>

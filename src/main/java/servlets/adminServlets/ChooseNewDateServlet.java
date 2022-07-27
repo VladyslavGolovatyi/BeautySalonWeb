@@ -43,7 +43,7 @@ public class ChooseNewDateServlet extends HttpServlet {
         }
         request.setAttribute("worker", appointment.getWorker());
         LOG.info("Choose new date for appointment page");
-        request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/chooseDateView.jsp").
+        request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/chooseNewDateView.jsp").
                 forward(request, response);
     }
 
@@ -52,6 +52,6 @@ public class ChooseNewDateServlet extends HttpServlet {
         int id = Integer.parseInt(request.getParameter("id"));
         String date = request.getParameter("date");
         LOG.info(String.format("Chosen date of appointment, id - %s, date - %s", id, date));
-        response.sendRedirect(request.getContextPath() + "/admin/chooseTime?id=" + id + "&date=" + date);
+        response.sendRedirect("chooseTime?id=" + id + "&date=" + date);
     }
 }

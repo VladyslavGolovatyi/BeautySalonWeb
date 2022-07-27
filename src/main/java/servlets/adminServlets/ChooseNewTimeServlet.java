@@ -23,27 +23,27 @@ public class ChooseNewTimeServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         int id = Integer.parseInt(request.getParameter("id"));
         String date = request.getParameter("date");
-        String workerEmail = null;
+        int workerId = 0;
         String errorString = null;
         List<String> slotList = null;
 
         try {
-            workerEmail = DBManager.getInstance().findAppointment(id).getWorker().getEmail();
+            workerId = DBManager.getInstance().findAppointment(id).getWorker().getId();
         } catch (DBException e) {
             e.printStackTrace();
             errorString = e.getMessage();
         }
 
         try {
-            slotList = DBManager.getInstance().queryAvailableSlots(workerEmail, date);
+            slotList = DBManager.getInstance().queryAvailableSlots(workerId, date);
         } catch (DBException e) {
             e.printStackTrace();
             errorString = e.getMessage();
         }
 
-        String dayOfTheWeek = LocalDate.parse(date).getDayOfWeek().name().toLowerCase();
+        String dayOfTheWeek = LocalDate.parse(date).getDayOfWeek().name();
         try {
-            if(DBManager.getInstance().findUser(workerEmail).getWorkingDays().stream().noneMatch(dayOfTheWeek::equalsIgnoreCase)) {
+            if(DBManager.getInstance().findUser(workerId).getWorkingDays().stream().noneMatch(dayOfTheWeek::equalsIgnoreCase)) {
                 slotList = new ArrayList<>();
             }
         } catch (DBException e) {
@@ -62,14 +62,15 @@ public class ChooseNewTimeServlet extends HttpServlet {
         request.setAttribute("slotList", slotList);
 
         LOG.info("Choose new time for appointment page");
-        request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/chooseTimeView.jsp").
+        request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/chooseNewTimeView.jsp").
                 forward(request, response);
     }
 
     @Override
     protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         int id = Integer.parseInt(request.getParameter("id"));
-        String datetime = request.getParameter("date") + " " + request.getParameter("slots");
+        String date = request.getParameter("date");
+        String datetime = date + " " + request.getParameter("slots");
         String errorString = null;
 
         try {
@@ -80,12 +81,11 @@ public class ChooseNewTimeServlet extends HttpServlet {
         }
 
         if (errorString != null) {
-            request.setAttribute("errorString", errorString);
-            request.getServletContext().getRequestDispatcher("/WEB-INF/views/adminViews/chooseTimeView.jsp").
-                    forward(request, response);
+            request.getSession().setAttribute("errorString", errorString);
+            response.sendRedirect("chooseTime?id="+id+"&date="+date);
         } else {
             LOG.info(String.format("Appointment №%d successfully updated, new datetime - %s", id, datetime));
-            response.sendRedirect(request.getContextPath() + "/admin/appointments");
+            response.sendRedirect("appointments");
         }
     }
 }
