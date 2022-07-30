@@ -20,6 +20,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
+/**
+ * The DAO-layer class
+ */
 public class DBManager {
 
     private final static String INSERT_INTO_SERVICES = "INSERT INTO Services VALUES (?,?)";
@@ -62,7 +65,7 @@ public class DBManager {
     private final DataSource ds;
 
     /**
-     * private singleton constructor
+     * Private singleton constructor
      */
     private DBManager() throws DBException {
         try {
@@ -78,6 +81,12 @@ public class DBManager {
         this.ds = ds;
     }
 
+    /**
+     * Gets instance.
+     *
+     * @return the instance
+     * @throws DBException the db exception
+     */
     public static synchronized DBManager getInstance() throws DBException {
         if (instance == null) {
             instance = new DBManager();
@@ -85,6 +94,13 @@ public class DBManager {
         return instance;
     }
 
+    /**
+     * Gets instance.
+     *
+     * @param ds the ds
+     * @return the instance
+     * @throws DBException the db exception
+     */
     public static synchronized DBManager getInstance(DataSource ds) throws DBException {
         if (instance == null) {
             instance = new DBManager(ds);
@@ -167,6 +183,13 @@ public class DBManager {
     }
 
 
+    /**
+     * Add service.
+     *
+     * @param name  the name
+     * @param price the price
+     * @throws DBException the db exception
+     */
     public void addService(String name, int price) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -187,6 +210,17 @@ public class DBManager {
         }
     }
 
+    /**
+     * Add client.
+     *
+     * @param email        the email
+     * @param password     the password
+     * @param role         the role
+     * @param first_name   the first name
+     * @param last_name    the last name
+     * @param phone_number the phone number
+     * @throws DBException the db exception
+     */
     public void addClient(String email, String password, String role, String first_name, String last_name, String phone_number) throws DBException {
         Connection conn = null;
         try {
@@ -202,6 +236,19 @@ public class DBManager {
         }
     }
 
+    /**
+     * Add worker.
+     *
+     * @param email        the email
+     * @param password     the password
+     * @param role         the role
+     * @param first_name   the first name
+     * @param last_name    the last name
+     * @param phone_number the phone number
+     * @param services     the services
+     * @param workingDays  the working days
+     * @throws DBException the db exception
+     */
     public void addWorker(String email, String password, String role, String first_name, String last_name, String phone_number,
                           List<String> services, List<String> workingDays) throws DBException {
         Connection conn = null;
@@ -308,6 +355,15 @@ public class DBManager {
         return 0;
     }
 
+    /**
+     * Add appointment.
+     *
+     * @param workerId the worker id
+     * @param clientId the client id
+     * @param datetime the datetime
+     * @param service  the service
+     * @throws DBException the db exception
+     */
     public void addAppointment(int workerId, int clientId, String datetime, String service) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -333,6 +389,14 @@ public class DBManager {
 
     }
 
+    /**
+     * Leave feedback.
+     *
+     * @param id       the id
+     * @param rating   the rating
+     * @param response the response
+     * @throws DBException the db exception
+     */
     public void leaveFeedback(int id, int rating, String response) throws DBException {
         Connection conn = null;
         PreparedStatement pstm1 = null;
@@ -382,6 +446,13 @@ public class DBManager {
         }
     }
 
+    /**
+     * Find appointment appointment.
+     *
+     * @param id the id
+     * @return the appointment
+     * @throws DBException the db exception
+     */
     public Appointment findAppointment(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -417,6 +488,13 @@ public class DBManager {
         }
     }
 
+    /**
+     * Find service.
+     *
+     * @param name the name
+     * @return the service
+     * @throws DBException the db exception
+     */
     public Service findService(String name) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -516,18 +594,47 @@ public class DBManager {
         }
     }
 
+    /**
+     * Find user.
+     *
+     * @param email the email
+     * @return the user
+     * @throws DBException the db exception
+     */
     public User findUser(String email) throws DBException {
         return findUser(SELECT_USER_BY_EMAIL, 0, email, null);
     }
 
+    /**
+     * Find user.
+     *
+     * @param email    the email
+     * @param password the password
+     * @return the user
+     * @throws DBException the db exception
+     */
     public User findUser(String email, String password) throws DBException {
         return findUser(SELECT_USER_BY_EMAIL_AND_PASSWORD, 0, email, password);
     }
 
+    /**
+     * Find user.
+     *
+     * @param id the id
+     * @return the user
+     * @throws DBException the db exception
+     */
     public User findUser(int id) throws DBException {
         return findUser(SELECT_USER_BY_ID, id, null, null);
     }
 
+    /**
+     * Update user balance.
+     *
+     * @param userId the user id
+     * @param amount the amount
+     * @throws DBException the db exception
+     */
     public void updateUserBalance(int userId, int amount) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -549,6 +656,14 @@ public class DBManager {
         }
     }
 
+    /**
+     * Update user balance.
+     *
+     * @param conn   connection
+     * @param userId the user id
+     * @param amount the amount
+     * @throws DBException the db exception
+     */
     public void updateUserBalance(Connection conn, int userId, int amount) throws DBException {
         PreparedStatement pstm = null;
         try {
@@ -566,6 +681,13 @@ public class DBManager {
         }
     }
 
+    /**
+     * Update service.
+     *
+     * @param name  the name
+     * @param price the price
+     * @throws DBException the db exception
+     */
     public void updateService(String name, int price) throws DBException {
 
         Connection conn = null;
@@ -589,6 +711,13 @@ public class DBManager {
         }
     }
 
+    /**
+     * Update appointment.
+     *
+     * @param timeslot the timeslot
+     * @param id       the id
+     * @throws DBException the db exception
+     */
     public void updateAppointment(String timeslot, int id) throws DBException {
 
         Connection conn = null;
@@ -612,6 +741,12 @@ public class DBManager {
         }
     }
 
+    /**
+     * Update appointment status paid.
+     *
+     * @param id the id
+     * @throws DBException the db exception
+     */
     public void updateAppointmentStatusPaid(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -632,6 +767,12 @@ public class DBManager {
 
     }
 
+    /**
+     * Update appointment status done.
+     *
+     * @param id the id
+     * @throws DBException the db exception
+     */
     public void updateAppointmentStatusDone(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -652,6 +793,16 @@ public class DBManager {
 
     }
 
+    /**
+     * Update worker.
+     *
+     * @param id          the id
+     * @param email       the email
+     * @param phoneNumber the phone number
+     * @param services    the services
+     * @param workingDays the working days
+     * @throws DBException the db exception
+     */
     public void updateWorker(int id, String email, String phoneNumber, List<String> services, List<String> workingDays) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -679,6 +830,12 @@ public class DBManager {
 
     }
 
+    /**
+     * Pay for appointment.
+     *
+     * @param id the id
+     * @throws DBException the db exception
+     */
     public void payForAppointment(int id) throws DBException {
         Appointment appointment = findAppointment(id);
         int price = appointment.getService().getPrice();
@@ -734,6 +891,12 @@ public class DBManager {
         }
     }
 
+    /**
+     * Delete service.
+     *
+     * @param name the name
+     * @throws DBException the db exception
+     */
     public void deleteService(String name) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -754,6 +917,12 @@ public class DBManager {
 
     }
 
+    /**
+     * Delete worker.
+     *
+     * @param id the id
+     * @throws DBException the db exception
+     */
     public void deleteWorker(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -773,6 +942,12 @@ public class DBManager {
         }
     }
 
+    /**
+     * Delete appointment.
+     *
+     * @param id the id
+     * @throws DBException the db exception
+     */
     public void deleteAppointment(int id) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
@@ -793,7 +968,10 @@ public class DBManager {
     }
 
     /**
+     * Query service list.
+     *
      * @return List of all services which are available in beauty salon now
+     * @throws DBException the db exception
      */
     public List<Service> queryService() throws DBException {
         Connection conn = null;
@@ -826,7 +1004,13 @@ public class DBManager {
     }
 
     /**
+     * Query worker list.
+     *
+     * @param sorting the sorting
+     * @param filter  the filter
+     * @param date    the date
      * @return List of workers who are registered in beauty salon now ordered by second parameter
+     * @throws DBException the db exception
      */
     public List<User> queryWorker(String sorting, List<String> filter, String date) throws DBException {
         String sql = SELECT_ALL_WORKERS_ORDERED_BY;
@@ -911,6 +1095,14 @@ public class DBManager {
         }
     }
 
+    /**
+     * Query available slots list.
+     *
+     * @param workerId the worker id
+     * @param date     the date
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<String> queryAvailableSlots(int workerId, String date) throws DBException {
         List<String> allSlots = new ArrayList<>();
         List<Appointment> workerAppointments = queryWorkerAppointments(workerId);
@@ -934,18 +1126,44 @@ public class DBManager {
         return allSlots;
     }
 
+    /**
+     * Query client appointments list.
+     *
+     * @param clientId the client id
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<Appointment> queryClientAppointments(int clientId) throws DBException {
         return queryAppointments(SELECT_CLIENT_APPOINTMENTS, clientId);
     }
 
+    /**
+     * Query worker appointments list.
+     *
+     * @param workerId the worker id
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<Appointment> queryWorkerAppointments(int workerId) throws DBException {
         return queryAppointments(SELECT_WORKER_APPOINTMENTS, workerId);
     }
 
+    /**
+     * Query all appointments list.
+     *
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<Appointment> queryAllAppointments() throws DBException {
         return queryAppointments(SELECT_ALL_APPOINTMENTS, 0);
     }
 
+    /**
+     * Query past appointments list.
+     *
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<Appointment> queryPastAppointments() throws DBException {
         return queryAppointments(SELECT_ALL_PAST_APPOINTMENTS, 0);
     }
@@ -986,6 +1204,13 @@ public class DBManager {
 
     }
 
+    /**
+     * Query worker responses list.
+     *
+     * @param workerId the worker id
+     * @return the list
+     * @throws DBException the db exception
+     */
     public List<Response> queryWorkerResponses(int workerId) throws DBException {
         Connection conn = null;
         PreparedStatement pstm = null;
